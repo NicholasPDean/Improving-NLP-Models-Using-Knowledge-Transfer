@@ -73,9 +73,12 @@ class Com2SenseDataProcessor(DataProcessor):
             sentence1 = datum["sent_1"]
             sentence2 = datum["sent_2"]
             
-            # if label is gone, this will be None anyway, which is desired behavior
-            label1 = datum["label_1"]
-            label2 = datum["label_2"]
+            try:
+                label1 = datum["label_1"]
+                label2 = datum["label_2"]
+            except:
+                label1 = None
+                label2 = None 
 
             domain = datum["domain"]
             scenario = datum["scenario"]
