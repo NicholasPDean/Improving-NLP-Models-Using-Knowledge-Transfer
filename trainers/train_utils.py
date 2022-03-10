@@ -51,21 +51,44 @@ def mask_tokens(inputs, tokenizer, args, special_tokens_mask=None):
     # function `masked_fill_`, and `torch.bernoulli`.
     # Check the inputs to the bernoulli function and use other hinted functions
     # to construct such inputs.
-    raise NotImplementedError("Please finish the TODO!")
 
+    # Function to set a percentage of the indices as True,
+    # without including the indices corresponding to special tokens
+    def selected_indices(prob, shape=inputs.shape, special_mask=special_tokens_mask):
+        prob_tensor = torch.full(shape, prob)
+        prob_tensor.masked_fill_(special_mask, 0)
+        bern_result = torch.bernoulli(prob_tensor)
+        return torch.logical_and(bern_result, bern_result)
+    
+    indices_masked = selected_indices(args.mlm_probability)
+    
     # Remember that the "non-masked" parts should be filled with ignore index.
-    raise NotImplementedError("Please finish the TODO!")
+    ignore_index = args.mlm_ignore_index
+
+    for i in range(len(indices_masked[0])):
+        if not indices_masked[0][i]:
+            labels[0][i] = ignore_index
 
     # For 80% of the time, we will replace masked input tokens with  the
     # tokenizer.mask_token (e.g. for BERT it is [MASK] for for RoBERTa it is
     # <mask>, check tokenizer documentation for more details)
-    raise NotImplementedError("Please finish the TODO!")
+    indices_replaced = torch.logical_and(selected_indices(0.8), indices_masked)
+    mask_token_id = tokenizer.convert_tokens_to_ids(tokenizer.mask_token)
+
+    for i in range(len(indices_replaced[0])):
+        if indices_replaced[0][i]:
+            inputs[0][i] = mask_token_id
 
     # For 10% of the time, we replace masked input tokens with random word.
     # Hint: you may find function `torch.randint` handy.
     # Hint: make sure that the random word replaced positions are not overlapping
     # with those of the masked positions, i.e. "~indices_replaced".
-    raise NotImplementedError("Please finish the TODO!")
+    indices_randomed = torch.logical_and((torch.logical_and(selected_indices(0.5), ~indices_replaced)), indices_masked)
+    rand_ids = torch.randint(low=0, high=tokenizer.vocab_size, size=inputs.shape)
+
+    for i in range(len(indices_randomed[0])):
+        if indices_randomed[0][i]:
+            inputs[0][i] = rand_ids[0][i]
 
     # End of TODO
     ##################################################
@@ -87,7 +110,30 @@ def pairwise_accuracy(guids, preds, labels):
     # statement coming from the same complementary
     # pair is identical. You can simply pair the these
     # predictions and labels w.r.t the `guid`. 
-    raise NotImplementedError("Please finish the TODO!")
+    
+    match = True
+    prev = 0
+    correct = 0
+    wrong = 0
+
+    for curr in range(len(guids)):
+        if guids[curr] != guids[prev]:
+            if match:
+                correct += 1
+            else:
+                wrong += 1
+            match = True
+        else:
+            match = match and (preds[curr] == labels[curr])
+        prev = curr
+    
+    if match:
+        correct += 1
+    else:
+        wrong += 1
+    
+    acc = correct/(correct+wrong)
+
     # End of TODO
     ########################################################
      
