@@ -74,8 +74,8 @@ class Com2SenseDataProcessor(DataProcessor):
             sentence2 = datum["sent_2"]
             
             try:
-                label1 = datum["label_1"]
-                label2 = datum["label_2"]
+                label1 = self.label2int(datum["label_1"])
+                label2 = self.label2int(datum["label_2"])
             except:
                 label1 = None
                 label2 = None 
