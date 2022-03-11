@@ -111,27 +111,21 @@ def pairwise_accuracy(guids, preds, labels):
     # pair is identical. You can simply pair the these
     # predictions and labels w.r.t the `guid`. 
     
-    match = True
-    prev = 0
-    correct = 0
-    wrong = 0
-
+    guid_dict = {}
     for curr in range(len(guids)):
-        if guids[curr] != guids[prev]:
-            if match:
-                correct += 1
-            else:
-                wrong += 1
-            match = True
+        curr_id = guids[curr]
+        if curr_id not in guid_dict:
+            guid_dict[curr_id] = True
+        guid_dict[curr_id] = guid_dict[curr_id] and (preds[curr] == labels[curr])
+    
+    wrong = 0
+    correct = 0
+    for guid in guid_dict:
+        if guid_dict[guid]:
+            correct += 1
         else:
-            match = match and (preds[curr] == labels[curr])
-        prev = curr
-    
-    if match:
-        correct += 1
-    else:
-        wrong += 1
-    
+            wrong += 1
+
     acc = correct/(correct+wrong)
 
     # End of TODO
