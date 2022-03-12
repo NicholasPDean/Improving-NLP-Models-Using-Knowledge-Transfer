@@ -219,15 +219,17 @@ def train(args, train_dataset, model, tokenizer):
             # TODO: Please finish the following training loop.
             # Make sure to make a special if-statement for
             # args.training_phase is `pretrain`.
-            raise NotImplementedError("Please finish the TODO!")
 
             if args.training_phase == "pretrain":
                 # TODO: Mask the input tokens.
-                raise NotImplementedError("Please finish the TODO!")
+                input_ids, labels = mask_tokens(inputs["input_ids"], tokenizer, args)
+                inputs["input_ids"] = input_ids
+                inputs["labels"] = labels
 
             # TODO: See the HuggingFace transformers doc to properly get
             # the loss from the model outputs.
-            raise NotImplementedError("Please finish the TODO!")
+            outputs = model(**inputs)
+            loss = outputs.loss
 
             if args.n_gpu > 1:
                 # Applies mean() to average on multi-gpu parallel training.
@@ -235,10 +237,10 @@ def train(args, train_dataset, model, tokenizer):
 
             # Handles the `gradient_accumulation_steps`, i.e., every such
             # steps we update the model, so the loss needs to be devided.
-            raise NotImplementedError("Please finish the TODO!")
+            loss = loss / args.gradient_accumulation_steps
 
             # Loss backward.
-            raise NotImplementedError("Please finish the TODO!")
+            loss.backward()
 
             # End of TODO.
             ##################################################
@@ -382,21 +384,30 @@ def evaluate(args, model, tokenizer, prefix="", data_split="test"):
             # TODO: Please finish the following eval loop.
             # Make sure to make a special if-statement for
             # args.training_phase is `pretrain`.
-            raise NotImplementedError("Please finish the TODO!")
 
             if args.training_phase == "pretrain":
                 # TODO: Mask the input tokens.
-                raise NotImplementedError("Please finish the TODO!")
+                input_ids, labels = mask_tokens(inputs["input_ids"], tokenizer, args)
+                inputs["input_ids"] = input_ids
+                inputs["labels"] = labels
 
             # TODO: See the HuggingFace transformers doc to properly get the loss
             # AND the logits from the model outputs, it can simply be 
             # indexing properly the outputs as tuples.
             # Make sure to perform a `.mean()` on the eval loss and add it
             # to the `eval_loss` variable.
-            raise NotImplementedError("Please finish the TODO!")
+            outputs = model(**inputs)
+            loss = outputs.loss
+            logits = outputs.logits
+
+            if args.n_gpu > 1:
+                # Applies mean() to average on multi-gpu parallel training.
+                loss = loss.mean()
+
+            eval_loss += loss.item()
 
             # TODO: Handles the logits with Softmax properly.
-            raise NotImplementedError("Please finish the TODO!")
+            logits = torch.nn.functional.softmax(logits)
 
             # End of TODO.
             ##################################################
@@ -442,16 +453,20 @@ def evaluate(args, model, tokenizer, prefix="", data_split="test"):
         # TODO: For `pretrain` phase, we only need to compute the
         # metric "perplexity", that is the exp of the eval_loss.
         if args.training_phase == "pretrain":
-            raise NotImplementedError("Please finish the TODO!")
+            eval_perplexity = math.exp(eval_loss)
         # TODO: Please use the preds and labels to properly compute all
         # the following metrics: accuracy, precision, recall and F1-score.
         # Please also make your sci-kit learn scores able to take the
         # `args.score_average_method` for the `average` argument.
         else:
-            raise NotImplementedError("Please finish the TODO!")
+            eval_acc = accuracy_score(labels, preds)
+            eval_prec = precision_score(labels, preds, average=args.score_average_method)
+            eval_recall = recall_score(labels, preds, average=args.score_average_method)
+            eval_f1 = f1_score(labels, preds, average=args.score_average_method)
+
             # TODO: Pairwise accuracy.
             if args.task_name == "com2sense":
-                raise NotImplementedError("Please finish the TODO!")
+                eval_pairwise_acc = pairwise_accuracy(guids, preds, labels)
 
         # End of TODO.
         ##################################################
@@ -622,16 +637,17 @@ def main():
     # sequence classification model.
 
     # TODO: Huggingface configs.
-    raise NotImplementedError("Please finish the TODO!")
+    config = AutoConfig.from_pretrained(args.model_name_or_path)
 
     # TODO: Tokenizer.
-    raise NotImplementedError("Please finish the TODO!")
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
 
     # TODO: Defines the model.
     if args.training_phase == "pretrain":
-        raise NotImplementedError("Please finish the TODO!")
+        model = AutoModelForMaskedLM.from_config(config)
     else:
-        raise NotImplementedError("Please finish the TODO!")
+        # Not sure if this is correct
+        model = AutoModelForSequenceClassification.from_config(config)
 
     # End of TODO.
     ##################################################
@@ -688,8 +704,8 @@ def main():
             ##################################################
             # TODO: Make sure the eval_split is "test" if in
             # testing phase.
-            pass  # This TODO does not require any actual
-                  # implementations, just a reminder.
+                # This TODO does not require any actual
+                # implementations, just a reminder.
             # End of TODO.
             ##################################################
 
