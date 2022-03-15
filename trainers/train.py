@@ -163,7 +163,7 @@ def train(args, train_dataset, model, tokenizer):
     # Check if continuing training from a checkpoint
     if (os.path.exists(args.model_name_or_path)
         and not args.do_not_load_optimizer):
-        # set global_step to gobal_step of last saved checkpoint from model path
+        # set global_step to global_step of last saved checkpoint from model path
         try:
             global_step = int(
                 args.model_name_or_path.split("/")[-1].split("-")[-1])
@@ -309,6 +309,8 @@ def train(args, train_dataset, model, tokenizer):
                     # directory such as `checkpoint-best`, the saved weights
                     # will be overwritten each time your model reaches a best
                     # thus far evaluation results on the dev set.
+
+                    # output_dir_best = os.path.join(args.output_dir, "checkpoint-best")
 
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
@@ -644,10 +646,9 @@ def main():
 
     # TODO: Defines the model.
     if args.training_phase == "pretrain":
-        model = AutoModelForMaskedLM.from_config(config)
+        model = AutoModelForMaskedLM.from_pretrained(args.model_name_or_path)
     else:
-        # Not sure if this is correct
-        model = AutoModelForSequenceClassification.from_config(config)
+        model = AutoModelForSequenceClassification.from_pretrained(args.model_name_or_path)
 
     # End of TODO.
     ##################################################
