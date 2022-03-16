@@ -72,7 +72,7 @@ class SemEvalDataProcessor(DataProcessor):
 
                 example2 = SemEvalSingleSentenceExample(
                     guid = index,
-                    label = 1,
+                    label = 0,
                     text = item["Incorrect Statement"],
                     right_reason1 = item["Right Reason1"],
                     right_reason2 = item["Right Reason2"],
