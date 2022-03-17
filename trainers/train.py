@@ -406,7 +406,8 @@ def evaluate(args, model, tokenizer, prefix="", data_split="test"):
                 # Applies mean() to average on multi-gpu parallel training.
                 loss = loss.mean()
 
-            eval_loss += loss.item()
+            if args.eval_split != "test":  
+                eval_loss += loss.item()
 
             # TODO: Handles the logits with Softmax properly.
             logits = torch.nn.functional.softmax(logits, dim=1)
@@ -461,14 +462,15 @@ def evaluate(args, model, tokenizer, prefix="", data_split="test"):
         # Please also make your sci-kit learn scores able to take the
         # `args.score_average_method` for the `average` argument.
         else:
-            eval_acc = accuracy_score(labels, preds)
-            eval_prec = precision_score(labels, preds, average=args.score_average_method)
-            eval_recall = recall_score(labels, preds, average=args.score_average_method)
-            eval_f1 = f1_score(labels, preds, average=args.score_average_method)
+            if args.eval_split != "test":            
+                eval_acc = accuracy_score(labels, preds)
+                eval_prec = precision_score(labels, preds, average=args.score_average_method)
+                eval_recall = recall_score(labels, preds, average=args.score_average_method)
+                eval_f1 = f1_score(labels, preds, average=args.score_average_method)
 
-            # TODO: Pairwise accuracy.
-            if args.task_name == "com2sense":
-                eval_pairwise_acc = pairwise_accuracy(guids, preds, labels)
+                # TODO: Pairwise accuracy.
+                if args.task_name == "com2sense":
+                    eval_pairwise_acc = pairwise_accuracy(guids, preds, labels)
 
         # End of TODO.
         ##################################################
