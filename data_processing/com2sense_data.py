@@ -13,6 +13,7 @@ from .utils import Coms2SenseSingleSentenceExample
 from transformers import (
     AutoTokenizer,
 )
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
 
 class Com2SenseDataProcessor(DataProcessor):
@@ -124,14 +125,114 @@ class Com2SenseDataProcessor(DataProcessor):
         return self._read_data(data_dir=data_dir, split="test")
 
 
+def domain_partition_analysis(examples, preds, domain):
+    # returns the index of each example with the given domain
+    indices = [i for i,x in enumerate(examples) if x.domain==domain]
+    examples = [examples[i] for i in indices]
+    preds = [preds[i] for i in indices]
+    print("Number of {} examples: {}".format(domain, len(indices)))
+    analysis(examples, preds)
+
+def scenario_partition_analysis(examples, preds, scenario):
+    # returns the index of each example with the given scenario
+    indices = [i for i,x in enumerate(examples) if x.scenario==scenario]
+    examples = [examples[i] for i in indices]
+    preds = [preds[i] for i in indices]
+    print("Number of {} examples: {}".format(scenario, len(indices)))
+    analysis(examples, preds)
+
+def analysis(val_examples, preds):
+    guids = [x.guid for x in val_examples]
+    labels = [x.label for x in val_examples]
+
+    pair_acc = pairwise_accuracy(guids, preds, labels)
+
+    acc = accuracy_score(labels, preds)
+    prec = precision_score(labels, preds, average="binary")
+    recall = recall_score(labels, preds, average="binary")
+    f1 = f1_score(labels, preds, average="binary")
+    print()
+    print("Accuracy: {}".format(acc))
+    print("Precision: {}".format(prec))
+    print("Recall: {}".format(recall))
+    print("F1 Score: {}".format(f1))
+    print("Pairwise Accuracy: {}".format(pair_acc))
+    print()
+
+def pairwise_accuracy(guids, preds, labels):
+    acc = 0.0  # The accuracy to return.
+    
+    guid_dict = {}
+    for curr in range(len(guids)):
+        curr_id = guids[curr]
+        if curr_id not in guid_dict:
+            guid_dict[curr_id] = True
+        guid_dict[curr_id] = guid_dict[curr_id] and (preds[curr] == labels[curr])
+    
+    wrong = 0
+    correct = 0
+    for guid in guid_dict:
+        if guid_dict[guid]:
+            correct += 1
+        else:
+            wrong += 1
+
+    acc = correct/(correct+wrong)
+
+    return acc
+
+def unique(list1):
+    x = np.array(list1)
+    return np.unique(x)
+
 if __name__ == "__main__":
+
+    # set to None if don't intend to do analysis of prediction data. Otherwise, set to path to dev predictions txt file
+    #analysis_data = "com2sense_only_real/com2sense_only_dev_predictions_third.txt"
+    #analysis_data = "piqa_to_com2sense/piqa_to_com2sense_dev_predictions.txt"
+    analysis_data = None
 
     # Test loading data.
     proc = Com2SenseDataProcessor(data_dir="datasets/com2sense")
     train_examples = proc.get_train_examples()
     val_examples = proc.get_dev_examples()
     test_examples = proc.get_test_examples()
-    print()
-    for i in range(3):
-        print(test_examples[i])
-    print()
+
+    # Print Analysis
+    if analysis_data is not None:
+        
+        print()
+        print()
+
+        file_path = os.path.join("dev_predictions", analysis_data)
+        data = open(file_path, "r")
+        contents = data.readlines()
+
+        # convert strings of form '1\n' into the boolean True, and '0\n' into False
+        preds = [x.strip()=='1' for x in contents]
+
+        print("Overall Analysis:")
+        print("Number of examples: {}".format(len(val_examples)))
+        analysis(val_examples, preds)
+
+        scenarios = unique([x.scenario for x in val_examples])
+        for scenario in scenarios:
+            print("Scenario: " + scenario)
+            scenario_partition_analysis(val_examples, preds, scenario)
+
+        domains = unique([x.domain for x in val_examples])
+        for domain in domains:
+            print("Domain: " + domain)
+            domain_partition_analysis(val_examples, preds, domain)
+
+
+        
+
+    # print()
+    # for i in range(3):
+    #     print(val_examples[i])
+    # print()
+    # print(len(val_examples))
+    # print(val_examples[0].label)
+    # print(val_examples[0].guid)
+    # print(val_examples[len(val_examples)-1].guid)
