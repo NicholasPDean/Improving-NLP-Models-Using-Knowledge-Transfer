@@ -247,6 +247,79 @@ class Com2SenseDataset(Dataset):
 
         return input_ids, attention_mask, token_type_ids, labels, guid
 
+class PhysicalIQADataset(Dataset):
+    def __init__(self, examples, tokenizer,
+                 max_seq_length=None,
+                 seed=None, args=None):
+        """
+        Args:
+            examples (list): input examples of type `DummyExample`.
+            tokenizer (huggingface.tokenizer): tokenizer in used.
+            max_seq_length (int): maximum length to truncate the input ids.
+            seed (int): random seed.
+        """
+        if seed is not None:
+            np.random.seed(seed)
+            torch.manual_seed(seed)
+            random.seed(seed)
+            self.seed = seed
+
+        self.args = args
+        self.examples = examples
+
+        self.tokenizer = tokenizer
+        self.max_seq_length = max_seq_length
+
+        self.cls_id = self.tokenizer.convert_tokens_to_ids(tokenizer.cls_token)
+        self.pad_id = self.tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
+        self.sep_id = self.tokenizer.convert_tokens_to_ids(tokenizer.sep_token)
+
+        self.args = args
+
+    def __len__(self):
+        return len(self.examples)
+        
+    def __getitem__(self, idx):
+
+        ##################################################
+        # TODO: Please finish this function.
+        # Note that `token_type_ids` may not exist from
+        # the outputs of tokenizer for certain types of
+        # models (e.g. RoBERTa), please take special care
+        # of it with an if-else statement.
+        
+        example = self.examples[idx]
+        guid = example.guid
+        text = example.text
+
+        batch_encoding = self.tokenizer(
+            text,
+            add_special_tokens=True,
+            max_length=self.max_seq_length,
+            padding="max_length",
+            truncation=True,
+        )
+
+        input_ids = torch.Tensor(batch_encoding["input_ids"]).long()
+        attention_mask = torch.Tensor(batch_encoding["attention_mask"]).long()
+        if "token_type_ids" not in batch_encoding:
+            token_type_ids = torch.zeros_like(input_ids)
+        else:
+            token_type_ids = torch.Tensor(batch_encoding["token_type_ids"]).long()
+
+        # End of TODO.
+        ##################################################
+
+        label = example.label
+        if label is not None:
+            labels = torch.Tensor([label]).long()[0]
+
+        if not self.args.do_train:
+            if label is None:
+                return input_ids, attention_mask, token_type_ids, guid
+            return input_ids, attention_mask, token_type_ids, labels, guid
+
+        return input_ids, attention_mask, token_type_ids, labels, guid
 
 if __name__ == "__main__":
     class dummy_args(object):
