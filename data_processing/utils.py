@@ -82,3 +82,18 @@ class SemEvalSingleSentenceExample:
     def to_json_string(self):
         """Serializes this instance to a JSON string."""
         return json.dumps(dataclasses.asdict(self), indent=2) + "\n"
+
+@dataclass
+class PhysicalIQASingleSentenceExample:
+    """
+    A single training/test example for Physical IQA (single statement) Instance.
+    """
+
+    guid: str
+    text: str
+    label: Optional[int] = None
+    goal: Optional[str] = None
+
+    def to_json_string(self):
+        """Serializes this instance to a JSON string."""
+        return json.dumps(dataclasses.asdict(self), indent=2) + "\n"
