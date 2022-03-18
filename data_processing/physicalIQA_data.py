@@ -66,14 +66,14 @@ class PhysicalIQADataProcessor(DataProcessor):
 
             example1 = PhysicalIQASingleSentenceExample(
                 guid=guid,
-                text=sol1,
+                text=goal + ' ' + sol1,
                 label=label1,
                 goal=goal
             )
 
             example2 = PhysicalIQASingleSentenceExample(
                 guid=guid,
-                text=sol2,
+                text=goal + ' ' + sol2,
                 label=label2,
                 goal=goal
             )
@@ -93,11 +93,11 @@ class PhysicalIQADataProcessor(DataProcessor):
 
     def get_dev_examples(self, data_dir=None):
         """See base class."""
-        return self._read_data(data_dir=data_dir, split="valid")
+        return self._read_data(data_dir=data_dir, split="dev")
 
     def get_test_examples(self, data_dir=None):
         """See base class."""
-        return self._read_data(data_dir=data_dir, split="tests")
+        return self._read_data(data_dir=data_dir, split="test")
 
 
 if __name__ == "__main__":
@@ -108,6 +108,13 @@ if __name__ == "__main__":
     val_examples = proc.get_dev_examples()
     test_examples = proc.get_test_examples()
     print()
+    print("TRAIN EXAMPLES:")
+    for i in range(3):
+        print(train_examples[i])
+    print("DEV EXAMPLES:")
+    for i in range(3):
+        print(val_examples[i])
+    print("TEST EXAMPLES:")
     for i in range(3):
         print(test_examples[i])
     print()
