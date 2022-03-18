@@ -498,12 +498,13 @@ def evaluate(args, model, tokenizer, prefix="", data_split="test"):
                 logger.info("  %s = %s", key, str(results[key]))
                 writer.write("%s = %s\n" % (key, str(results[key])))
 
-        pred_file = os.path.join(args.output_dir, "com2sense_dev_predictions.txt")
-        pred_fo = open(pred_file, "w")
-        for pred in preds:
-            pred_fo.write(str(pred)+"\n")
-        pred_fo.close()
-        logging.info("Saving dev prediction file to: {}".format(pred_file))
+        if args.task_name == "com2sense":
+            pred_file = os.path.join(args.output_dir, "com2sense_dev_predictions.txt")
+            pred_fo = open(pred_file, "w")
+            for pred in preds:
+                pred_fo.write(str(pred)+"\n")
+            pred_fo.close()
+            logging.info("Saving dev prediction file to: {}".format(pred_file))
 
     # Stores the prediction .txt file to the `args.output_dir`.
     if not has_label:
