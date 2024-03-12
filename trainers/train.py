@@ -163,7 +163,7 @@ def train(args, train_dataset, model, tokenizer):
     # Check if continuing training from a checkpoint
     if (os.path.exists(args.model_name_or_path)
         and not args.do_not_load_optimizer):
-        # set global_step to gobal_step of last saved checkpoint from model path
+        # set global_step to global_step of last saved checkpoint from model path
         try:
             global_step = int(
                 args.model_name_or_path.split("/")[-1].split("-")[-1])
@@ -219,15 +219,17 @@ def train(args, train_dataset, model, tokenizer):
             # TODO: Please finish the following training loop.
             # Make sure to make a special if-statement for
             # args.training_phase is `pretrain`.
-            raise NotImplementedError("Please finish the TODO!")
 
             if args.training_phase == "pretrain":
                 # TODO: Mask the input tokens.
-                raise NotImplementedError("Please finish the TODO!")
+                input_ids, labels = mask_tokens(inputs["input_ids"], tokenizer, args)
+                inputs["input_ids"] = input_ids
+                inputs["labels"] = labels
 
             # TODO: See the HuggingFace transformers doc to properly get
             # the loss from the model outputs.
-            raise NotImplementedError("Please finish the TODO!")
+            outputs = model(**inputs)
+            loss = outputs.loss
 
             if args.n_gpu > 1:
                 # Applies mean() to average on multi-gpu parallel training.
@@ -235,10 +237,10 @@ def train(args, train_dataset, model, tokenizer):
 
             # Handles the `gradient_accumulation_steps`, i.e., every such
             # steps we update the model, so the loss needs to be devided.
-            raise NotImplementedError("Please finish the TODO!")
+            loss = loss / args.gradient_accumulation_steps
 
             # Loss backward.
-            raise NotImplementedError("Please finish the TODO!")
+            loss.backward()
 
             # End of TODO.
             ##################################################
@@ -307,6 +309,8 @@ def train(args, train_dataset, model, tokenizer):
                     # directory such as `checkpoint-best`, the saved weights
                     # will be overwritten each time your model reaches a best
                     # thus far evaluation results on the dev set.
+
+                    # output_dir_best = os.path.join(args.output_dir, "checkpoint-best")
 
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
@@ -382,21 +386,31 @@ def evaluate(args, model, tokenizer, prefix="", data_split="test"):
             # TODO: Please finish the following eval loop.
             # Make sure to make a special if-statement for
             # args.training_phase is `pretrain`.
-            raise NotImplementedError("Please finish the TODO!")
 
             if args.training_phase == "pretrain":
                 # TODO: Mask the input tokens.
-                raise NotImplementedError("Please finish the TODO!")
+                input_ids, labels = mask_tokens(inputs["input_ids"], tokenizer, args)
+                inputs["input_ids"] = input_ids
+                inputs["labels"] = labels
 
             # TODO: See the HuggingFace transformers doc to properly get the loss
             # AND the logits from the model outputs, it can simply be 
             # indexing properly the outputs as tuples.
             # Make sure to perform a `.mean()` on the eval loss and add it
             # to the `eval_loss` variable.
-            raise NotImplementedError("Please finish the TODO!")
+            outputs = model(**inputs)
+            loss = outputs.loss
+            logits = outputs.logits
+
+            if args.n_gpu > 1:
+                # Applies mean() to average on multi-gpu parallel training.
+                loss = loss.mean()
+
+            if args.eval_split != "test":  
+                eval_loss += loss.item()
 
             # TODO: Handles the logits with Softmax properly.
-            raise NotImplementedError("Please finish the TODO!")
+            logits = torch.nn.functional.softmax(logits, dim=1)
 
             # End of TODO.
             ##################################################
@@ -442,16 +456,21 @@ def evaluate(args, model, tokenizer, prefix="", data_split="test"):
         # TODO: For `pretrain` phase, we only need to compute the
         # metric "perplexity", that is the exp of the eval_loss.
         if args.training_phase == "pretrain":
-            raise NotImplementedError("Please finish the TODO!")
+            eval_perplexity = math.exp(eval_loss)
         # TODO: Please use the preds and labels to properly compute all
         # the following metrics: accuracy, precision, recall and F1-score.
         # Please also make your sci-kit learn scores able to take the
         # `args.score_average_method` for the `average` argument.
         else:
-            raise NotImplementedError("Please finish the TODO!")
-            # TODO: Pairwise accuracy.
-            if args.task_name == "com2sense":
-                raise NotImplementedError("Please finish the TODO!")
+            if args.eval_split != "test":            
+                eval_acc = accuracy_score(labels, preds)
+                eval_prec = precision_score(labels, preds, average=args.score_average_method)
+                eval_recall = recall_score(labels, preds, average=args.score_average_method)
+                eval_f1 = f1_score(labels, preds, average=args.score_average_method)
+
+                # TODO: Pairwise accuracy.
+                if args.task_name == "com2sense":
+                    eval_pairwise_acc = pairwise_accuracy(guids, preds, labels)
 
         # End of TODO.
         ##################################################
@@ -479,6 +498,14 @@ def evaluate(args, model, tokenizer, prefix="", data_split="test"):
                 logger.info("  %s = %s", key, str(results[key]))
                 writer.write("%s = %s\n" % (key, str(results[key])))
 
+        if args.task_name == "com2sense":
+            pred_file = os.path.join(args.output_dir, "com2sense_dev_predictions.txt")
+            pred_fo = open(pred_file, "w")
+            for pred in preds:
+                pred_fo.write(str(pred)+"\n")
+            pred_fo.close()
+            logging.info("Saving dev prediction file to: {}".format(pred_file))
+
     # Stores the prediction .txt file to the `args.output_dir`.
     if not has_label:
         pred_file = os.path.join(args.output_dir, "com2sense_predictions.txt")
@@ -486,7 +513,7 @@ def evaluate(args, model, tokenizer, prefix="", data_split="test"):
         for pred in preds:
             pred_fo.write(str(pred)+"\n")
         pred_fo.close()
-        logging.info("Saving prediction file to: {}".format(pred_file))
+        logging.info("Saving test prediction file to: {}".format(pred_file))
 
     return results
 
@@ -622,16 +649,16 @@ def main():
     # sequence classification model.
 
     # TODO: Huggingface configs.
-    raise NotImplementedError("Please finish the TODO!")
+    config = AutoConfig.from_pretrained(args.model_name_or_path)
 
     # TODO: Tokenizer.
-    raise NotImplementedError("Please finish the TODO!")
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
 
     # TODO: Defines the model.
     if args.training_phase == "pretrain":
-        raise NotImplementedError("Please finish the TODO!")
+        model = AutoModelForMaskedLM.from_pretrained(args.model_name_or_path)
     else:
-        raise NotImplementedError("Please finish the TODO!")
+        model = AutoModelForSequenceClassification.from_pretrained(args.model_name_or_path)
 
     # End of TODO.
     ##################################################
@@ -688,8 +715,8 @@ def main():
             ##################################################
             # TODO: Make sure the eval_split is "test" if in
             # testing phase.
-            pass  # This TODO does not require any actual
-                  # implementations, just a reminder.
+                # This TODO does not require any actual
+                # implementations, just a reminder.
             # End of TODO.
             ##################################################
 

@@ -61,6 +61,7 @@ class SemEvalDataProcessor(DataProcessor):
             for item in csv_reader:
                 example1 = SemEvalSingleSentenceExample(
                     guid = index,
+                    label = 1,
                     text = item["Correct Statement"],
                     right_reason1 = item["Right Reason1"],
                     right_reason2 = item["Right Reason2"],
@@ -71,6 +72,7 @@ class SemEvalDataProcessor(DataProcessor):
 
                 example2 = SemEvalSingleSentenceExample(
                     guid = index,
+                    label = 0,
                     text = item["Incorrect Statement"],
                     right_reason1 = item["Right Reason1"],
                     right_reason2 = item["Right Reason2"],
