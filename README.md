@@ -1,3 +1,7 @@
+# Overview
+
+Researching how the knowledge transfer technique can be used to improve the commonsense reasoning ability of NLP models. Link to [paper](https://github.com/NicholasPDean/Improving-NLP-Models-Using-Knowledge-Transfer/blob/main/group_24.pdf).
+
 # UCLA Winter2022 CS188 Course Project Guideline
 
 # Table of Contents
